@@ -3,6 +3,9 @@ function getDistance () {
     distanceRight = DFRobotMaqueenPlus.readeDistance(Motors1.M2)
     return Math.round((parseFloat(distanceLeft) + parseFloat(distanceRight)) / 2 * 13.188)
 }
+function getDistanceLast () {
+    return getDistance() - distanceLast
+}
 function park () {
     nextMove(1)
     runTime = input.runningTime() - idleStart
@@ -106,7 +109,6 @@ function getBattIndic () {
     return battPower
 }
 let consumedEnergy = 0
-let stopTime = 0
 let counter = 0
 let idleTime = 0
 let isIdle = 0
@@ -115,8 +117,10 @@ let runTime = 0
 let distanceRight = ""
 let distanceLeft = ""
 let battPower = 0
+let distanceLast = 0
 let serialInput = ""
 serialInput = ""
+distanceLast = 0
 DFRobotMaqueenPlus.I2CInit()
 DFRobotMaqueenPlus.PID(PID.OFF)
 battPower = 20
@@ -125,15 +129,7 @@ let batteryConsumption = 50
 let idleConsumption = 0.00003333333
 bluetooth.startUartService()
 loops.everyInterval(50, function () {
-    if (DFRobotMaqueenPlus.ultraSonic(PIN.P1, PIN.P2) <= 20) {
-        stop()
-        stopTime = input.runningTime()
-        while (DFRobotMaqueenPlus.ultraSonic(PIN.P1, PIN.P2) <= 20) {
-            basic.showString("W")
-        }
-        DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CW, 255)
-        DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CW, 255)
-    }
+	
 })
 loops.everyInterval(100, function () {
     let index: number;
@@ -141,7 +137,7 @@ if (isIdle) {
         idleTime += input.runningTime() - idleStart
         idleStart = input.runningTime()
     }
-    consumedEnergy += getDistance() / batteryConsumption
+    consumedEnergy += getDistanceLast() / batteryConsumption
     consumedEnergy += idleTime * idleConsumption
     idleTime = 0
     if (consumedEnergy >= 1) {
@@ -150,7 +146,7 @@ if (isIdle) {
             consume()
             index += 1
         }
-        clearDistance()
+        distanceLast = getDistance()
         consumedEnergy = 0
     }
 })
