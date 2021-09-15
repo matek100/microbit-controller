@@ -8,18 +8,16 @@ function stop() { //stops the vehicle and goes into idle
 
 bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () { //BLE comm section
     let serialInput = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
-    /*if (serialInput == "getDistance") {
-        bluetooth.uartWriteNumber(getDistance())
-    } else */if (serialInput == "getBattIndic") {
+    if (serialInput == "b") { //getBattIndic
         bluetooth.uartWriteNumber(battPower);
-    } else if (serialInput == "charged") {
+    } else if (serialInput == "c") { //charged
         charged();
-    } else if (serialInput == "returnCorners") {
+    } else if (serialInput == "r") { //returnCroners
         bluetooth.uartWriteNumber(corners);
-    } else if (serialInput == "nextPump") {
+    } else if (serialInput == "n") { //nextPump
         goToPump = true;
     }
-    else if (serialInput == "stop") {
+    else if (serialInput == "s") { //stop
         stop()
     }
 
@@ -55,6 +53,7 @@ function turn(parm: boolean) {
     basic.pause(330);
     //DFRobotMaqueenPlus.mototRun(Motors.ALL, Dir.CW, 20);
     //basic.pause(50)
+    
     return 0
 }
 
@@ -62,19 +61,21 @@ function turn(parm: boolean) {
 
 
 basic.forever(function () {
-    if (!isStoped) {
+    if (!isStoped && (distance > 15 || distance == 0)) {
         if (goToPump && !(DFRobotMaqueenPlus.readPatrol(Patrol.R3))) { //detects a right turn
+            
             control.waitForEvent(turn(false), 0)
             pumpRightCounter++;
             if (pumpRightCounter > 1) {
                 goToPump = false;
             }
         } else if (!(DFRobotMaqueenPlus.readPatrol(Patrol.L3))) { //detects a left turn
+            
+            control.waitForEvent(turn(true), 0);
             if (!goToPump) {
                 corners += 1
-                consume();
+                consume()
             }
-            control.waitForEvent(turn(true), 0);
 
         } else { //normal straight line following
             let L1 = DFRobotMaqueenPlus.readPatrol(Patrol.L1)
@@ -112,13 +113,19 @@ basic.forever(function () {
                 DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CW, 100)
                 DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CW, 0)
             }
+
         }
     }
+    if(!isStoped && distance <= 15){
+        DFRobotMaqueenPlus.mototStop(Motors.ALL);
+    }
+    
+    
 })
 
 
 //callcucaltes idle time
-loops.everyInterval(100, function () {
+loops.everyInterval(300, function () {
     if (isStoped) {
         let consumedIldeEnergy = Math.round((input.runningTime() - stopTime) * 0.00003333333);
         if (consumedIldeEnergy >= 1) {
@@ -129,16 +136,32 @@ loops.everyInterval(100, function () {
             }
         }
     }
+
+    /*if (!turn && distance <= 5 && distance != 0) {
+        stop();
+        basic.pause(600)
+    }
+    
+    else {
+        isStoped = false;
+    }*/
 })
 
-loops.everyInterval(600, function () {
-    if (DFRobotMaqueenPlus.ultraSonic(PIN.P1, PIN.P2) <= 15) {
+loops.everyInterval(50, function() {
+    distance = DFRobotMaqueenPlus.ultraSonic(PIN.P1, PIN.P2);
+})
+
+/*loops.everyInterval(100, function () {
+    basic.showNumber(0);
+    if (DFRobotMaqueenPlus.ultraSonic(PIN.P1, PIN.P2) <= 5) {
         stop();
+        basic.showNumber(2);
     }
     else {
         isStoped = false;
     }
-})
+
+})*/
 
 
 //init parameters
@@ -151,6 +174,7 @@ let goToPump = true;
 let isStoped = false;
 let stopTime = 0;
 let pumpRightCounter = 0;
+let distance = 0;
 bluetooth.startUartService();
 //displays the number of the robot
 basic.showNumber(1)
