@@ -4,30 +4,7 @@ function stop() { //stops the vehicle and goes into idle
     stopTime = input.runningTime();
 }
 
-/*function clearDisplay() { //helper function, clears display
-    for (let i = 0; i <= 4; i++) {
-        for (let j = 0; j <= 4; j++) {
-            if (led.point(j, i)) {
-                led.unplot(j, i)
-            }
-        }
-    }
-}
 
-function displayPower() { //displays power
-    clearDisplay()
-    let counter = 0
-    for (let k = 0; k <= 4; k++) {
-        for (let l = 0; l <= 4; l++) {
-            if (counter > battPower) {
-                break;
-            }
-            led.plot(l, k)
-            counter += 1
-        }
-    }
-}
-*/
 
 bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () { //BLE comm section
     let serialInput = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
@@ -51,19 +28,18 @@ bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () 
 
 function consume() { //consume the power
     battPower += -1
+    if(battPower <= 0){
+        stop();
+    }
 }
 
 function charged() { //charges itself by 1 unit
     if (battPower < 25) {
         battPower += 1;
     }
-    //displayPower()
     isStoped = false;
 }
 
-/*function getBattIndic() { //returns the battery status
-    return battPower
-}*/
 
 
 function turn(parm: boolean) {
@@ -169,7 +145,6 @@ loops.everyInterval(600, function () {
 DFRobotMaqueenPlus.I2CInit();
 DFRobotMaqueenPlus.PID(PID.OFF);
 let battPower = 10;
-//displayPower();
 //let idleConsumption = 0.00003333333;
 let corners = 0;
 let goToPump = true;
