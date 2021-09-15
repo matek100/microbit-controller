@@ -1,24 +1,10 @@
-function getDistance() {
-    let distanceLeft = DFRobotMaqueenPlus.readeDistance(Motors1.M1);
-    let distanceRight = DFRobotMaqueenPlus.readeDistance(Motors1.M2);
-    return Math.round((parseFloat(distanceLeft) + parseFloat(distanceRight)) / 2 * 13.188);
-}
-function park() { //removes itself for the circle and turns off
-    DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CCW, 255);
-    DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CW, 255);
-    basic.pause(300)
-    DFRobotMaqueenPlus.mototRun(Motors.ALL, Dir.CW, 255);
-    basic.pause(100);
-    DFRobotMaqueenPlus.mototStop(Motors.ALL);
-}
-
 function stop() { //stops the vehicle and goes into idle
     DFRobotMaqueenPlus.mototStop(Motors.ALL);
     isStoped = true;
     stopTime = input.runningTime();
 }
 
-function clearDisplay() { //helper function, clears display
+/*function clearDisplay() { //helper function, clears display
     for (let i = 0; i <= 4; i++) {
         for (let j = 0; j <= 4; j++) {
             if (led.point(j, i)) {
@@ -27,6 +13,7 @@ function clearDisplay() { //helper function, clears display
         }
     }
 }
+
 function displayPower() { //displays power
     clearDisplay()
     let counter = 0
@@ -40,113 +27,79 @@ function displayPower() { //displays power
         }
     }
 }
+*/
 
-function clearDistance() { //rests the distacne
-    DFRobotMaqueenPlus.clearDistance(Motors.ALL)
-}
 bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () { //BLE comm section
     let serialInput = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
-    if (serialInput == "getDistance()") {
+    /*if (serialInput == "getDistance") {
         bluetooth.uartWriteNumber(getDistance())
-    } else if (serialInput == "clearDistance()") {
-        clearDistance()
-    } else if (serialInput == "getBattIndic()") {
-        bluetooth.uartWriteNumber(getBattIndic())
-        basic.showNumber(0)
-    } else if (serialInput == "charged()") {
-        charged()
-    } else if (serialInput == "returnCorners()") {
+    } else */if (serialInput == "getBattIndic") {
+        bluetooth.uartWriteNumber(battPower);
+    } else if (serialInput == "charged") {
+        charged();
+    } else if (serialInput == "returnCorners") {
         bluetooth.uartWriteNumber(corners);
-    } else if (serialInput == "goToNextPump()") {
+    } else if (serialInput == "nextPump") {
         goToPump = true;
     }
-    else if (serialInput == "stop()") {
+    else if (serialInput == "stop") {
         stop()
     }
-    /*else if (serialInput == "park()") { //?
-       park()
-   }*/
+
 });
 
 
 function consume() { //consume the power
     battPower += -1
-    if (battPower < 1) {
-        park() //removes itself from the game if it is empty
-
-        displayPower()
-    }
 }
 
 function charged() { //charges itself by 1 unit
     if (battPower < 25) {
         battPower += 1;
     }
-    displayPower()
+    //displayPower()
     isStoped = false;
 }
 
-function getBattIndic() { //returns the battery status
+/*function getBattIndic() { //returns the battery status
     return battPower
-}
+}*/
 
 
-input.onButtonPressed(Button.A, function () { //for debug
-    turn(1)
-    forward()
-    turn(0)
-})
-function turn(parm: number) {
-    if (parm == 0) {
+function turn(parm: boolean) {
+    if (parm) {
         // left turn
-        DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CCW, 255)
-        DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CW, 255)
-        while (DFRobotMaqueenPlus.readPatrol(Patrol.L2)) {
-        }
-    } else if (parm == 1) {
+        DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CCW, 100)
+        DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CW, 100)
+    } else {
         // right turn
-        DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CW, 255)
-        DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CCW, 255)
-        while (DFRobotMaqueenPlus.readPatrol(Patrol.R2)) {
-        }
+        DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CW, 100)
+        DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CCW, 100)
     }
-    DFRobotMaqueenPlus.mototStop(Motors.ALL)
-    return 0
-}
-function forward() {
-    DFRobotMaqueenPlus.mototRun(Motors.ALL, Dir.CW, 100)
-    while (DFRobotMaqueenPlus.readPatrol(Patrol.L3)) {
-    }
-    DFRobotMaqueenPlus.mototStop(Motors.ALL)
+    basic.pause(330);
+    //DFRobotMaqueenPlus.mototRun(Motors.ALL, Dir.CW, 20);
+    //basic.pause(50)
     return 0
 }
 
-function collision(){
-    while(DFRobotMaqueenPlus.ultraSonic(PIN.P1, PIN.P0) >= 20){};
-    isStoped = false;
-    return 0;
-}
+//check how it works when turning left once back on track
+
+
 basic.forever(function () {
-    // control.waitForEvent(turn(1), 0);
-    // control.waitForEvent(forward(), 0);
-    // control.waitForEvent(turn(0), 0);
-    // control.waitForEvent(forward(), 0);
-    // control.waitForEvent(turn(0), 0);
-    // control.waitForEvent(forward(), 0);
-    // control.waitForEvent(turn(1), 0);
     if (!isStoped) {
         if (goToPump && !(DFRobotMaqueenPlus.readPatrol(Patrol.R3))) { //detects a right turn
-            rightCounter++
-            if (rightCounter >= 2) {
+            control.waitForEvent(turn(false), 0)
+            pumpRightCounter++;
+            if (pumpRightCounter > 1) {
                 goToPump = false;
             }
-            control.waitForEvent(turn(0), 0)
-        } else if (!(DFRobotMaqueenPlus.readPatrol(Patrol.L3))) { //detes a left turn
+        } else if (!(DFRobotMaqueenPlus.readPatrol(Patrol.L3))) { //detects a left turn
             if (!goToPump) {
                 corners += 1
                 consume();
             }
-            control.waitForEvent(turn(0), 0)
+            control.waitForEvent(turn(true), 0);
+
         } else { //normal straight line following
             let L1 = DFRobotMaqueenPlus.readPatrol(Patrol.L1)
             let L2 = DFRobotMaqueenPlus.readPatrol(Patrol.L2)
@@ -165,7 +118,7 @@ basic.forever(function () {
                 DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CW, 100)
             } else if (L2 && !(L1) && R1 && R2) {
                 // 1011
-                DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CCW, 50)
+                DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CW, 50)
                 DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CW, 100)
             } else if (L2 && !(L1) && !(R1) && R2) {
                 // 1001 middle
@@ -173,7 +126,7 @@ basic.forever(function () {
             } else if (L2 && L1 && !(R1) && R2) {
                 // 1101
                 DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CW, 100)
-                DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CCW, 50)
+                DFRobotMaqueenPlus.mototRun(Motors.M2, Dir.CW, 50)
             } else if (L2 && L1 && R1 && !(R2)) {
                 // 1110
                 DFRobotMaqueenPlus.mototRun(Motors.M1, Dir.CW, 100)
@@ -191,7 +144,7 @@ basic.forever(function () {
 //callcucaltes idle time
 loops.everyInterval(100, function () {
     if (isStoped) {
-        let consumedIldeEnergy = Math.round((input.runningTime() - stopTime) * idleConsumption);
+        let consumedIldeEnergy = Math.round((input.runningTime() - stopTime) * 0.00003333333);
         if (consumedIldeEnergy >= 1) {
             stopTime = input.runningTime();
             while (consumedIldeEnergy > 0) {
@@ -202,26 +155,28 @@ loops.everyInterval(100, function () {
     }
 })
 
-
-//obsticle detection
-
-loops.everyInterval(200, function() {
-    if(DFRobotMaqueenPlus.ultraSonic(PIN.P1, PIN.P0) >= 20){
-        control.waitForEvent(collision(), 0);
+loops.everyInterval(600, function () {
+    if (DFRobotMaqueenPlus.ultraSonic(PIN.P1, PIN.P2) <= 15) {
+        stop();
     }
-});
+    else {
+        isStoped = false;
+    }
+})
+
 
 //init parameters
 DFRobotMaqueenPlus.I2CInit();
 DFRobotMaqueenPlus.PID(PID.OFF);
-let battPower = 20;
-displayPower();
-let idleConsumption = 0.00003333333;
+let battPower = 10;
+//displayPower();
+//let idleConsumption = 0.00003333333;
 let corners = 0;
 let goToPump = true;
 let isStoped = false;
 let stopTime = 0;
-let rightCounter = 0;
+let pumpRightCounter = 0;
 bluetooth.startUartService();
-
+//displays the number of the robot
+basic.showNumber(1)
 
