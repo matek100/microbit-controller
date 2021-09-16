@@ -22,7 +22,7 @@ function charged() { //charges itself by 1 unit
 
 radio.onReceivedString(function(receivedString: string) {
     if(parseInt(receivedString.charAt(0)) == deviceId){
-        switch(receivedString.slice(0, receivedString.length - 1)) {
+        switch(receivedString.slice(2, receivedString.length - 1)) {
             case "b": 
                 radio.sendString(deviceId + ":" +  battPower);
                 break;
